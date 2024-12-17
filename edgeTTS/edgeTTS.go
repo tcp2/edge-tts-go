@@ -1,12 +1,12 @@
 package edgeTTS
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 
 	"golang.org/x/term"
@@ -21,6 +21,7 @@ type EdgeTTS struct {
 type Args struct {
 	Text           string
 	Voice          string
+	Pitch          string
 	Proxy          string
 	Rate           string
 	Volume         string
@@ -34,39 +35,26 @@ func isTerminal(file *os.File) bool {
 }
 
 func PrintVoices(locale string) {
-	// Print all available voices.
 	voices, err := listVoices()
 	if err != nil {
+		log.Fatalf("Failed %v\n", err)
 		return
 	}
 	sort.Slice(voices, func(i, j int) bool {
 		return voices[i].ShortName < voices[j].ShortName
 	})
 
-	filterFieldName := map[string]bool{
-		"SuggestedCodec": true,
-		"FriendlyName":   true,
-		"Status":         true,
-		"VoiceTag":       true,
-		"Language":       true,
-	}
-
+	
+	voiceMap := make(map[string]interface{})
 	for _, voice := range voices {
-		if voice.Locale != locale {
+		if locale != "" && voice.Locale != locale {
 			continue
 		}
-		fmt.Printf("\n")
-		t := reflect.TypeOf(voice)
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			fieldName := field.Name
-			if filterFieldName[fieldName] {
-				continue
-			}
-			fieldValue := reflect.ValueOf(voice).Field(i).Interface()
-			fmt.Printf("%s: %v\n", fieldName, fieldValue)
-		}
+		voiceMap[voice.ShortName] = voice.Gender
 	}
+
+	jsonData, err := json.Marshal(voiceMap)
+	fmt.Println(string(jsonData))
 }
 
 func NewTTS(args Args) *EdgeTTS {
@@ -82,7 +70,7 @@ func NewTTS(args Args) *EdgeTTS {
 			return nil
 		}
 	}
-	tts := NewCommunicate().WithVoice(args.Voice).WithRate(args.Rate).WithVolume(args.Volume)
+	tts := NewCommunicate().WithVoice(args.Voice).WithRate(args.Rate).WithVolume(args.Volume).WithPitch(args.Pitch)
 	file, err := os.OpenFile(args.WriteMedia, os.O_WRONLY|os.O_APPEND|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to open file: %v\n", err)
@@ -96,11 +84,12 @@ func NewTTS(args Args) *EdgeTTS {
 	}
 }
 
-func (eTTS *EdgeTTS) task(text string, voice string, rate string, volume string) *CommunicateTextTask {
+func (eTTS *EdgeTTS) task(text string, voice string, pitch string, rate string, volume string) *CommunicateTextTask {
 	return &CommunicateTextTask{
 		text: text,
 		option: CommunicateTextOption{
 			voice:  voice,
+			pitch:  pitch,
 			rate:   rate,
 			volume: volume,
 		},
@@ -108,17 +97,17 @@ func (eTTS *EdgeTTS) task(text string, voice string, rate string, volume string)
 }
 
 func (eTTS *EdgeTTS) AddTextDefault(text string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, "", "", ""))
+	eTTS.texts = append(eTTS.texts, eTTS.task(text, eTTS.communicator.option.voice, eTTS.communicator.option.pitch, eTTS.communicator.option.rate, eTTS.communicator.option.volume))
 	return eTTS
 }
 
 func (eTTS *EdgeTTS) AddTextWithVoice(text string, voice string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, "", ""))
+	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, eTTS.communicator.option.pitch, eTTS.communicator.option.rate, eTTS.communicator.option.volume))
 	return eTTS
 }
 
-func (eTTS *EdgeTTS) AddText(text string, voice string, rate string, volume string) *EdgeTTS {
-	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, rate, volume))
+func (eTTS *EdgeTTS) AddText(text string, voice string, pitch string, rate string, volume string) *EdgeTTS {
+	eTTS.texts = append(eTTS.texts, eTTS.task(text, voice, pitch, rate, volume))
 	return eTTS
 }
 

@@ -3,7 +3,7 @@ package edgeTTS
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"strings"
 	"time"
@@ -22,7 +22,7 @@ func stringToBytes(text interface{}) []byte {
 	switch v := text.(type) {
 	case string:
 		encoder := unicode.UTF8.NewEncoder()
-		encodedText, err := ioutil.ReadAll(transform.NewReader(strings.NewReader(v), encoder))
+		encodedText, err := io.ReadAll(transform.NewReader(strings.NewReader(v), encoder))
 		if err != nil {
 			panic(fmt.Sprintf("Error encoding text: %s", err.Error()))
 		}
@@ -71,9 +71,10 @@ func splitTextByByteLength(text interface{}, byteLength int) []string {
 	return result
 }
 
-func mkssml(text interface{}, voice string, rate string, volume string) string {
+func mkssml(text interface{}, voice string, pitch string, rate string, volume string) string {
 	textStr := bytesToString(text)
-	ssml := fmt.Sprintf("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='%s'><prosody pitch='+0Hz' rate='%s' volume='%s'>%s</prosody></voice></speak>", voice, rate, volume, textStr)
+	ssml := fmt.Sprintf("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='%s'><prosody pitch='%s' rate='%s' volume='%s'>%s</prosody></voice></speak>", voice, pitch, rate, volume, textStr)
+	fmt.Println(ssml)
 	return ssml
 }
 
@@ -104,9 +105,9 @@ func dateToString() string {
 	return time.Now().UTC().Format("Mon Jan 02 2006 15:04:05 GMT-0700 (Coordinated Universal Time)")
 }
 
-func calcMaxMsgSize(voice string, rate string, volume string) int {
+func calcMaxMsgSize(voice string, pitch string, rate string, volume string) int {
 	websocketMaxSize := int(math.Pow(2, 16))
-	overheadPerMessage := len(ssmlHeadersPlusData(uuidWithOutDashes(), dateToString(), mkssml("", voice, rate, volume))) + 50
+	overheadPerMessage := len(ssmlHeadersPlusData(uuidWithOutDashes(), dateToString(), mkssml("", voice, pitch, rate, volume))) + 50
 	return websocketMaxSize - overheadPerMessage
 }
 

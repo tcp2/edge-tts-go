@@ -73,6 +73,7 @@ type CommunicateTextTask struct {
 
 type CommunicateTextOption struct {
 	voice  string
+	pitch  string
 	rate   string
 	volume string
 }
@@ -89,6 +90,7 @@ func NewCommunicate() *Communicate {
 	return &Communicate{
 		option: CommunicateTextOption{
 			voice:  "Microsoft Server Speech Text to Speech Voice (zh-CN, XiaoxiaoNeural)",
+			pitch:  "+0Hz",
 			rate:   "+0%",
 			volume: "+0%",
 		},
@@ -143,6 +145,14 @@ func (c *Communicate) WithProxy(proxy string) *Communicate {
 	return c
 }
 
+func (c *Communicate) WithPitch(pitch string) *Communicate {
+	// if !isValidPitch(pitch) {
+	// 	return c
+	// }
+	c.option.pitch = pitch
+	return c
+}
+
 func (c *Communicate) fillOption(text *CommunicateTextOption) {
 	if text.voice == "" {
 		text.voice = c.option.voice
@@ -184,7 +194,7 @@ func (c *Communicate) stream(text *CommunicateTextTask) chan communicateChunk {
 	c.fillOption(&text.option)
 	_ = conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("X-Timestamp:%s\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n{\"context\":{\"synthesis\":{\"audio\":{\"metadataoptions\":{\"sentenceBoundaryEnabled\":false,\"wordBoundaryEnabled\":true},\"outputFormat\":\"audio-24khz-48kbitrate-mono-mp3\"}}}}\r\n", date)))
 	_ = conn.WriteMessage(websocket.TextMessage, []byte(ssmlHeadersPlusData(uuidWithOutDashes(), date, mkssml(
-		text.text, text.option.voice, text.option.rate, text.option.volume,
+		text.text, text.option.voice, text.option.pitch, text.option.rate, text.option.volume,
 	))))
 
 	go func() {
@@ -314,4 +324,11 @@ func isValidVolume(volume string) bool {
 		return false
 	}
 	return regexp.MustCompile(`^[+-]\d+%$`).MatchString(volume)
+}
+
+func isValidPitch(pitch string) bool {
+	if pitch == "" {
+		return false
+	}
+	return regexp.MustCompile(`^[+-]\d+Hz$`).MatchString(pitch)
 }

@@ -24,10 +24,10 @@ func main() {
 	volume := pflag.String("volume", "+0%", "set TTS volume")
 	rate := pflag.String("rate", "+0%", "set TTS rate")
 	writeMedia := pflag.String("write-media", "", "send media output to file instead of stdout")
+	pitch := pflag.String("pitch", "+0Hz", "set TTS pitch")
 	// proxy := pflag.String("proxy", "", "use a proxy for TTS and voice list")
 	pflag.Usage = usage
 	pflag.Parse()
-
 	if *listVoices {
 		edgeTTS.PrintVoices(*locale)
 		os.Exit(0)
@@ -45,10 +45,11 @@ func main() {
 		args := edgeTTS.Args{
 			Text:       *text,
 			Voice:      *voice,
+			Pitch:      *pitch,
 			Rate:       *rate,
 			Volume:     *volume,
 			WriteMedia: *writeMedia,
 		}
-		edgeTTS.NewTTS(args).AddText(args.Text, args.Voice, args.Rate, args.Volume).Speak()
+		edgeTTS.NewTTS(args).AddText(args.Text, args.Voice, args.Pitch, args.Rate, args.Volume).Speak()
 	}
 }
