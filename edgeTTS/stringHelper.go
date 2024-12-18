@@ -74,7 +74,6 @@ func splitTextByByteLength(text interface{}, byteLength int) []string {
 func mkssml(text interface{}, voice string, pitch string, rate string, volume string) string {
 	textStr := bytesToString(text)
 	ssml := fmt.Sprintf("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='%s'><prosody pitch='%s' rate='%s' volume='%s'>%s</prosody></voice></speak>", voice, pitch, rate, volume, textStr)
-	fmt.Println(ssml)
 	return ssml
 }
 
