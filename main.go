@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/pflag"
@@ -37,7 +36,7 @@ func main() {
 			reader := bufio.NewReader(os.Stdin)
 			*text, _ = reader.ReadString('\n')
 		} else {
-			data, _ := ioutil.ReadFile(*file)
+			data, _ := os.ReadFile(*file)
 			*text = string(data)
 		}
 	}

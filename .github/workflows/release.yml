@@ -1,0 +1,38 @@
+name: Build and Release Golang
+
+on:
+  push:
+    tags:
+      - "v*"  # Chỉ chạy khi có tag mới dạng v1.0.0
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Build & Upload to GitHub Releases
+        uses: wangyoucao577/go-release-action@v1.42
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          binary_name: tts
+          compress: zip
