@@ -39,3 +39,5 @@ jobs:
           goarch: ${{ matrix.goarch }}
           binary_name: tts
           compress_assets: zip
+          release_name: ${{ github.event_name == 'workflow_dispatch' && 'beta' || '' }}
+          
