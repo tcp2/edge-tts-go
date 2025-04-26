@@ -37,4 +37,4 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           binary_name: tts
-          compress: zip
+          compress_assets: zip
